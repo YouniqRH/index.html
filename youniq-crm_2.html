@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Youniq RH — CRM</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--gold:#C9A84C;--gold-light:#E8D49A;--gold-pale:#F7F0DC;--dark:#1A1814;--dark2:#2C2820;--mid:#5A5449;--muted:#9A9085;--border:rgba(201,168,76,.18);--bordersoft:rgba(201,168,76,.08);--bg:#FAF8F3;--white:#fff;--danger:#C0392B;--dbg:#FDEDEC;--success:#1D6A45;--sbg:#E8F5EE;--warn:#8A5C0A;--wbg:#FEF3DC;--info:#1A4B7A;--ibg:#E8F0FA;--r:10px;--rsm:6px;--sh:0 2px 12px rgba(0,0,0,.06)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--dark);min-height:100vh;font-size:14px}
+.app{display:flex;min-height:100vh}
+.sidebar{width:220px;background:var(--dark);flex-shrink:0;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.main{flex:1;overflow:auto;min-width:0}
+.sb-logo{padding:22px 20px 18px;border-bottom:1px solid rgba(255,255,255,.06)}
+.sb-logo .brand{font-family:'DM Serif Display',serif;font-size:19px;color:var(--gold);letter-spacing:.02em}
+.sb-logo .sub{font-size:10px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin-top:2px}
+.nav{padding:10px 0;flex:1;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:9px;padding:9px 18px;cursor:pointer;color:var(--muted);font-size:13px;transition:all .14s;border-left:2px solid transparent}
+.nav-item:hover{color:var(--gold-light);background:rgba(255,255,255,.03)}
+.nav-item.active{color:var(--gold);background:rgba(201,168,76,.08);border-left-color:var(--gold)}
+.nav-ic{width:15px;text-align:center;font-size:13px}
+.nav-sec{padding:14px 18px 5px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.2)}
+.sb-bot{padding:14px 18px;border-top:1px solid rgba(255,255,255,.06)}
+.u-pill{display:flex;align-items:center;gap:8px}
+.u-av{width:27px;height:27px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--dark)}
+.u-name{font-size:12px;color:var(--muted)}
+.ph{padding:22px 26px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.pt{font-family:'DM Serif Display',serif;font-size:24px;color:var(--dark)}
+.ps{font-size:13px;color:var(--muted);margin-top:2px}
+.ha{display:flex;gap:8px;align-items:center;flex-shrink:0}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:8px 14px;border-radius:var(--rsm);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .14s}
+.btn-gold{background:var(--gold);color:var(--dark)}.btn-gold:hover{background:#B8952E}
+.btn-out{background:transparent;color:var(--dark);border:1px solid var(--border)}.btn-out:hover{background:var(--gold-pale);border-color:var(--gold)}
+.btn-ghost{background:transparent;color:var(--muted);border:none;padding:5px 9px}.btn-ghost:hover{color:var(--dark);background:rgba(0,0,0,.04);border-radius:var(--rsm)}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-danger{background:var(--dbg);color:var(--danger);border:1px solid rgba(192,57,43,.2)}
+.content{padding:22px 26px}
+.mrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:11px;margin-bottom:22px}
+.mc{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px}
+.mc-lbl{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:500}
+.mc-val{font-size:26px;font-weight:300;color:var(--dark);margin:5px 0 2px;font-family:'DM Serif Display',serif}
+.mc-sub{font-size:11px;color:var(--muted)}
+.mc.hl{background:var(--gold-pale);border-color:rgba(201,168,76,.35)}.mc.hl .mc-val{color:var(--gold)}
+.badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:500;white-space:nowrap}
+.bg{background:var(--gold-pale);color:#8A6800}
+.bgr{background:var(--sbg);color:var(--success)}
+.br{background:var(--dbg);color:var(--danger)}
+.bw{background:var(--wbg);color:var(--warn)}
+.bi{background:var(--ibg);color:var(--info)}
+.bgy{background:#F0EDE8;color:var(--mid)}
+.kw{overflow-x:auto;padding-bottom:10px}
+.kb{display:flex;gap:11px;min-width:max-content;align-items:flex-start}
+.kc{width:210px;background:var(--white);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;flex-shrink:0}
+.kch{padding:10px 13px;border-bottom:1px solid var(--bordersoft);display:flex;align-items:center;justify-content:space-between}
+.kcn{font-size:12px;font-weight:600;color:var(--dark)}
+.kcc{font-size:11px;background:var(--gold-pale);color:var(--gold);padding:2px 6px;border-radius:10px;font-weight:600}
+.kcs{padding:8px;display:flex;flex-direction:column;gap:7px;min-height:70px}
+.kcard{background:var(--bg);border:1px solid var(--border);border-radius:var(--rsm);padding:9px 11px;cursor:pointer;transition:all .14s}
+.kcard:hover{border-color:var(--gold-light);box-shadow:var(--sh)}
+.kcard-n{font-size:13px;font-weight:500;color:var(--dark);margin-bottom:3px}
+.kcard-e{font-size:11px;color:var(--muted);margin-bottom:5px}
+.kcard-f{display:flex;align-items:center;justify-content:space-between;gap:4px}
+.kcard-o{font-size:10px;color:var(--muted)}
+.tw{background:var(--white);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.th2{padding:13px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.si{padding:7px 11px;border:1px solid var(--border);border-radius:var(--rsm);font-family:'DM Sans',sans-serif;font-size:13px;color:var(--dark);background:var(--bg);width:200px;outline:none}
+.si:focus{border-color:var(--gold)}
+table{width:100%;border-collapse:collapse}
+th{padding:9px 14px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:10px 14px;border-bottom:1px solid var(--bordersoft);font-size:13px;color:var(--dark);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--gold-pale)}
+.dn{font-weight:500}.dm{color:var(--muted);font-size:12px}
+.ind-th th{background:var(--dark);color:rgba(255,255,255,.6);border:none;border-bottom:1px solid rgba(255,255,255,.08)}
+.ind-inp{width:100%;border:none;background:transparent;padding:3px 5px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--dark);outline:none}
+.ind-inp:focus{background:var(--gold-pale);border-radius:3px}
+.uz{border:2px dashed var(--border);border-radius:var(--r);padding:28px;text-align:center;cursor:pointer;transition:all .2s;background:var(--white)}
+.uz:hover,.uz.drag{border-color:var(--gold);background:var(--gold-pale)}
+.uz-icon{font-size:28px;margin-bottom:8px}
+.uz-title{font-size:14px;font-weight:500;color:var(--dark);margin-bottom:3px}
+.uz-sub{font-size:12px;color:var(--muted);line-height:1.5}
+.ug{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:22px}
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;pointer-events:none;transition:opacity .18s}
+.mo.open{opacity:1;pointer-events:all}
+.md{background:var(--white);border-radius:var(--r);width:530px;max-width:94vw;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.15)}
+.mh{padding:18px 22px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.mt2{font-family:'DM Serif Display',serif;font-size:19px}
+.mb{padding:18px 22px}
+.mf{padding:14px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
+.fg{margin-bottom:13px}
+.fl{font-size:11px;font-weight:500;color:var(--mid);margin-bottom:4px;display:block;text-transform:uppercase;letter-spacing:.06em}
+.fi,.fse,.fta{width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--rsm);font-family:'DM Sans',sans-serif;font-size:13px;color:var(--dark);background:var(--bg);outline:none}
+.fi:focus,.fse:focus,.fta:focus{border-color:var(--gold);background:var(--white)}
+.fta{min-height:65px;resize:vertical}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.al{border-radius:var(--rsm);padding:11px 13px;font-size:13px;margin-bottom:14px}
+.al-w{background:var(--wbg);color:var(--warn);border:1px solid rgba(138,92,10,.2)}
+.al-s{background:var(--sbg);color:var(--success);border:1px solid rgba(29,106,69,.2)}
+.fl-list{display:flex;flex-direction:column;gap:7px}
+.fl-item{background:var(--white);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:0 var(--rsm) var(--rsm) 0;padding:9px 13px;display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer}
+.fl-item.urg{border-left-color:var(--danger)}
+.fl-n{font-weight:500;font-size:13px}
+.fl-d{font-size:12px;color:var(--muted)}
+.page{display:none}.page.active{display:block}
+.pw{overflow-x:auto;max-height:240px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--rsm)}
+.pw table{font-size:12px}.pw th{background:var(--dark);color:rgba(255,255,255,.7);position:sticky;top:0}
+.pw td{padding:6px 11px}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+.kcs-over{background:var(--gold-pale)!important;border-radius:var(--rsm);}
+.kcard-dragging{opacity:.4;border:2px dashed var(--gold)!important;cursor:grabbing;}
+.kcard{cursor:grab;}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="sidebar">
+    <div class="sb-logo"><div class="brand">Youniq RH</div><div class="sub">CRM Comercial</div></div>
+    <nav class="nav">
+      <div class="nav-sec">Visão geral</div>
+      <div class="nav-item active" data-page="dashboard"><span class="nav-ic">◈</span>Dashboard</div>
+      <div class="nav-item" data-page="hoje"><span class="nav-ic">◉</span>Hoje <span id="nav-n" style="margin-left:auto;background:var(--danger);color:#fff;font-size:10px;padding:1px 5px;border-radius:10px;display:none"></span></div>
+      <div class="nav-sec">Pipeline</div>
+      <div class="nav-item" data-page="kanban"><span class="nav-ic">▦</span>Kanban</div>
+      <div class="nav-item" data-page="contatos"><span class="nav-ic">≡</span>Todos os contatos</div>
+      <div class="nav-sec">Gestão</div>
+      <div class="nav-item" data-page="indicadores"><span class="nav-ic">◎</span>Indicadores 2026</div>
+      <div class="nav-item" data-page="importar"><span class="nav-ic">↑</span>Importar planilha</div>
+      <div class="nav-item" data-page="backup"><span class="nav-ic">⊙</span>Backup</div>
+    </nav>
+    <div class="sb-bot"><div class="u-pill"><div class="u-av">K</div><div class="u-name">Karen — Comercial</div></div></div>
+  </div>
+  <div class="main">
+    <div class="page active" id="page-dashboard">
+      <div class="ph"><div><div class="pt">Dashboard</div><div class="ps">Visão geral do comercial — 2026</div></div><div class="ha"><button class="btn btn-gold" onclick="openModal('lead')">+ Novo contato</button></div></div>
+      <div class="content"><div class="mrow" id="d-metrics"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:16px"><div><div style="font-size:13px;font-weight:600;margin-bottom:9px">Pipeline ativo</div><div class="tw" id="d-pipe"></div></div><div><div style="font-size:13px;font-weight:600;margin-bottom:9px">Follow-ups urgentes</div><div id="d-fu"></div></div></div></div>
+    </div>
+    <div class="page" id="page-hoje">
+      <div class="ph"><div><div class="pt">O que fazer hoje</div><div class="ps">Ações pendentes e follow-ups</div></div></div>
+      <div class="content" id="hoje-content"></div>
+    </div>
+    <div class="page" id="page-kanban">
+      <div class="ph"><div><div class="pt">Pipeline</div><div class="ps">Visão por etapa</div></div><div class="ha"><button class="btn btn-gold" onclick="openModal('lead')">+ Novo contato</button></div></div>
+      <div class="content"><div class="kw"><div class="kb" id="kb"></div></div></div>
+    </div>
+    <div class="page" id="page-contatos">
+      <div class="ph"><div><div class="pt">Todos os contatos</div><div class="ps" id="ct-sub"></div></div><div class="ha"><button class="btn btn-gold" onclick="openModal('lead')">+ Novo contato</button></div></div>
+      <div class="content"><div class="tw"><div class="th2"><input class="si" type="text" placeholder="Buscar nome ou empresa..." id="q-input" oninput="filterCt()"><div style="display:flex;gap:7px"><select class="fi" style="width:auto;font-size:12px" id="q-fase" onchange="filterCt()"><option value="">Todas as fases</option></select><select class="fi" style="width:auto;font-size:12px" id="q-orig" onchange="filterCt()"><option value="">Todas as origens</option></select></div></div><table><thead><tr><th>Nome</th><th>Empresa</th><th>Origem</th><th>Fase</th><th>Data</th><th>Motivo</th><th></th></tr></thead><tbody id="ct-body"></tbody></table></div></div>
+    </div>
+    <div class="page" id="page-indicadores">
+      <div class="ph"><div><div class="pt">Indicadores 2026</div><div class="ps">Cada linha é um contato/proposta do período</div></div><div class="ha"><button class="btn btn-out btn-sm" onclick="addInd()">+ Linha</button><button class="btn btn-gold btn-sm" onclick="exportInd()">↓ Exportar</button></div></div>
+      <div class="content"><div class="tw" style="overflow-x:auto"><table><thead class="ind-th"><tr><th>Mês</th><th>Reunião</th><th>Proposta</th><th>Resultado</th><th>Fonte</th><th>Serviço</th><th>Obs</th><th></th></tr></thead><tbody id="ind-body"></tbody></table></div><div style="margin-top:18px"><div style="font-size:13px;font-weight:600;margin-bottom:11px">Totais acumulados</div><div class="mrow" id="ind-totais"></div></div></div>
+    </div>
+    <div class="page" id="page-importar">
+      <div class="ph"><div><div class="pt">Importar planilha</div><div class="ps">Carregue Leads.xlsx ou indicadores_2026.xlsx</div></div></div>
+      <div class="content">
+        <div class="ug">
+          <div><div style="font-size:13px;font-weight:600;margin-bottom:9px">Planilha de contatos (Leads.xlsx)</div><div class="uz" id="z-ct" onclick="document.getElementById('f-ct').click()" ondragover="dov(event,'z-ct')" ondragleave="dlv('z-ct')" ondrop="dop(event,'leads')"><div class="uz-icon">📋</div><div class="uz-title">Leads / Contatos</div><div class="uz-sub">Colunas: Nome Responsável · Empresa · Origem · Contato · Fase Atual · Data Inicio · Motivo de Encerramento · Obs</div></div><input type="file" id="f-ct" accept=".xlsx,.csv" style="display:none" onchange="hf(event,'leads')"></div>
+          <div><div style="font-size:13px;font-weight:600;margin-bottom:9px">Planilha de indicadores (indicadores_2026.xlsx)</div><div class="uz" id="z-ind" onclick="document.getElementById('f-ind').click()" ondragover="dov(event,'z-ind')" ondragleave="dlv('z-ind')" ondrop="dop(event,'ind')"><div class="uz-icon">📊</div><div class="uz-title">Indicadores 2026</div><div class="uz-sub">Colunas: Mês · Reuniões · Propostas enviadas · Fechado · Fonte · Serviço · Obs</div></div><input type="file" id="f-ind" accept=".xlsx,.csv" style="display:none" onchange="hf(event,'ind')"></div>
+        </div>
+        <div id="imp-prev"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mo" id="mo-lead">
+  <div class="md">
+    <div class="mh"><div class="mt2" id="ml-title">Novo contato</div><button class="btn btn-ghost" onclick="closeModal('lead')">✕</button></div>
+    <div class="mb">
+      <input type="hidden" id="e-id">
+      <div class="fr"><div class="fg"><label class="fl">Nome *</label><input class="fi" id="e-nome" placeholder="Nome do contato"></div><div class="fg"><label class="fl">Empresa *</label><input class="fi" id="e-empresa" placeholder="Nome da empresa"></div></div>
+      <div class="fr"><div class="fg"><label class="fl">Origem</label><select class="fse" id="e-origem"><option value="">—</option><option>OHub</option><option>Linkedin</option><option>Inboud</option><option>Site</option><option>Mapeamento</option><option>Indicação</option><option>Outro</option></select></div><div class="fg"><label class="fl">Contato</label><input class="fi" id="e-contato" placeholder="11 9xxxx-xxxx"></div></div>
+      <div class="fr"><div class="fg"><label class="fl">Fase Atual *</label><select class="fse" id="e-fase"><option value="">—</option><option>Atendimento inicial</option><option>Reunião agendada</option><option>Reunião Realizada</option><option>Proposta enviada</option><option>Aguardando Retorno</option><option>Negociação</option><option>Fechado</option><option>Sem resposta</option><option>Pausou Demanda</option><option>Atendimento Encerrado</option><option>Declinou</option></select></div><div class="fg"><label class="fl">Data Início</label><input class="fi" id="e-data" type="date"></div></div>
+      <div class="fr"><div class="fg"><label class="fl">Próxima ação (data)</label><input class="fi" id="e-proxdata" type="date"></div><div class="fg"><label class="fl">Serviço de interesse</label><select class="fse" id="e-servico"><option value="">—</option><option>You Signature / Terceirização de RH</option><option>NR-1 + Zaya</option><option>R&amp;S</option><option>T&amp;D</option><option>Cargos e Salários</option><option>You Care</option><option>Outro</option></select></div></div>
+      <div class="fr"><div class="fg"><label class="fl">Grazi necessária?</label><select class="fse" id="e-grazi"><option>Não</option><option>Sim — fechamento</option><option>Sim — estratégico</option></select></div><div class="fg"><label class="fl">Motivo encerramento</label><input class="fi" id="e-motivo" placeholder="Se declinou..."></div></div>
+      <div class="fg"><label class="fl">Observações</label><textarea class="fta" id="e-obs" placeholder="Contexto, dor, próximos passos..."></textarea></div>
+    </div>
+    <div class="mf"><button class="btn btn-out" onclick="closeModal('lead')">Cancelar</button><button class="btn btn-gold" onclick="salvar()">Salvar</button></div>
+  </div>
+</div>
+
+<div class="mo" id="mo-det">
+  <div class="md">
+    <div class="mh"><div class="mt2" id="det-title"></div><button class="btn btn-ghost" onclick="closeModal('det')">✕</button></div>
+    <div class="mb" id="det-body"></div>
+    <div class="mf"><button class="btn btn-danger btn-sm" onclick="deletar()">Remover</button><div style="flex:1"></div><button class="btn btn-out" onclick="closeModal('det')">Fechar</button><button class="btn btn-gold" onclick="editarAtual()">Editar</button></div>
+  </div>
+</div>
+
+<script>
+
+const SEED_LEADS = [{"nome": "Fernanda Regina", "empresa": "HDCON", "origem": "OHub", "contato": "4891648272.0", "fase": "Atendimento Encerrado", "data": "2026-02-24", "motivo": "Sem resposta", "obs": ""}, {"nome": "Flavia Blanco", "empresa": "APAF", "origem": "OHub", "contato": "11-984087221", "fase": "Atendimento Encerrado", "data": "2026-02-24", "motivo": "Sem resposta", "obs": ""}, {"nome": "Felipe", "empresa": "VRF", "origem": "Mapeamento", "contato": "", "fase": "Fechado", "data": "2026-02-25", "motivo": "Fechado", "obs": ""}, {"nome": "Mariana Sherman", "empresa": "RodeRotas", "origem": "OHub", "contato": "6192923737.0", "fase": "Atendimento Encerrado", "data": "2026-02-26", "motivo": "Demanda adiada", "obs": ""}, {"nome": "Rosimeire Rodrigues", "empresa": "FM Rodrigues", "origem": "OHub", "contato": "11-914593936", "fase": "Atendimento Encerrado", "data": "2026-02-26", "motivo": "Sem resposta", "obs": ""}, {"nome": "Ana Paula Leite", "empresa": "GP Investimentos", "origem": "OHub", "contato": "11-944450645", "fase": "Atendimento Encerrado", "data": "2026-02-27", "motivo": "Sem resposta", "obs": ""}, {"nome": "Karinne Mory", "empresa": "Likkaplas", "origem": "OHub", "contato": "22-999187959", "fase": "Atendimento Encerrado", "data": "2026-02-27", "motivo": "Sem resposta", "obs": ""}, {"nome": "Tatiely Cintra", "empresa": "Umano", "origem": "OHub", "contato": "21-969210881", "fase": "Atendimento Encerrado", "data": "2026-02-27", "motivo": "Demanda adiada", "obs": ""}, {"nome": "Vinicius Lohan", "empresa": "Bandim", "origem": "OHub", "contato": "21-995154950", "fase": "Atendimento Encerrado", "data": "2026-03-02", "motivo": "Sem resposta", "obs": ""}, {"nome": "Beatriz De Biasi", "empresa": "CrediPronto", "origem": "OHub", "contato": "11-932415820", "fase": "Atendimento Encerrado", "data": "2026-03-03", "motivo": "Demanda adiada", "obs": ""}, {"nome": "Daniele Faria", "empresa": "Ultra Brasil", "origem": "OHub", "contato": "11-981854557", "fase": "Atendimento Encerrado", "data": "2026-03-03", "motivo": "Sem resposta", "obs": ""}, {"nome": "João Sacramento", "empresa": "SP Brasil", "origem": "OHub", "contato": "11-995726411", "fase": "Declinou", "data": "2026-03-03", "motivo": "Fora do Orçamento", "obs": ""}, {"nome": "Karen", "empresa": "FL Brokers", "origem": "OHub", "contato": "11-920682220", "fase": "Declinou", "data": "2026-03-03", "motivo": "Outro", "obs": "Não queria exclusividade nem 30%"}, {"nome": "Geise Carla", "empresa": "Amey", "origem": "OHub", "contato": "4796620979.0", "fase": "Declinou", "data": "2026-03-04", "motivo": "Fora do Orçamento", "obs": ""}, {"nome": "Vitoria Moraes", "empresa": "Ashoka Brasil", "origem": "OHub", "contato": "11-984224016", "fase": "Declinou", "data": "2026-03-04", "motivo": "Fora do Orçamento", "obs": ""}, {"nome": "Tom Dobbels", "empresa": "Azteco", "origem": "OHub", "contato": "11-976122599", "fase": "Atendimento Encerrado", "data": "2026-03-05", "motivo": "Sem resposta", "obs": ""}, {"nome": "Vivian Miranda Mota", "empresa": "OuroVet", "origem": "OHub", "contato": "11-998512695", "fase": "Declinou", "data": "2026-03-06", "motivo": "Fora do Orçamento", "obs": ""}, {"nome": "Elaine Martins", "empresa": "Elaine Martins", "origem": "OHub", "contato": "6281252810.0", "fase": "Atendimento Encerrado", "data": "2026-03-09", "motivo": "Sem resposta", "obs": ""}, {"nome": "Jhulia De Oliveira", "empresa": "Jhulia Lanches", "origem": "OHub", "contato": "21-964264056", "fase": "Atendimento Encerrado", "data": "2026-03-09", "motivo": "Sem resposta", "obs": ""}, {"nome": "Ronald Santos", "empresa": "Construtora Marruá", "origem": "OHub", "contato": "9984754776.0", "fase": "Atendimento Encerrado", "data": "2026-03-09", "motivo": "Sem resposta", "obs": ""}, {"nome": "Luana Aquino", "empresa": "Melhor Bocado", "origem": "OHub", "contato": "11-987020102", "fase": "Atendimento Encerrado", "data": "2026-03-09", "motivo": "Sem resposta", "obs": ""}, {"nome": "Elaine Martins", "empresa": "-", "origem": "OHub", "contato": "6281252810.0", "fase": "Atendimento Encerrado", "data": "2026-03-09", "motivo": "Sem resposta", "obs": ""}, {"nome": "Jhulia De Oliveira", "empresa": "Jhulia Lanches", "origem": "OHub", "contato": "21 96426 4056", "fase": "Atendimento Encerrado", "data": "2026-03-09", "motivo": "Sem resposta", "obs": ""}, {"nome": "Jaqueline Pegoretti", "empresa": "Magna Moralia", "origem": "OHub", "contato": "15- 991186997", "fase": "Declinou", "data": "2026-03-11", "motivo": "Demanda adiada", "obs": ""}, {"nome": "Ronald Santos", "empresa": "Construtora Marruá", "origem": "OHub", "contato": "9984754776.0", "fase": "Atendimento Encerrado", "data": "2026-03-11", "motivo": "Sem resposta", "obs": ""}, {"nome": "Manoel de Almeida Passos", "empresa": "Map Contabil", "origem": "OHub", "contato": "-", "fase": "Atendimento Encerrado", "data": "2026-03-11", "motivo": "Sem resposta", "obs": ""}, {"nome": "Priscila Petrini de Morais", "empresa": "Boiron", "origem": "OHub", "contato": "11 91038 4416", "fase": "Atendimento Encerrado", "data": "2026-03-12", "motivo": "Demanda adiada", "obs": ""}, {"nome": "Janneti Giacometti", "empresa": "Laticinios Litoral Norte", "origem": "OHub", "contato": "19 99214 8244", "fase": "Declinou", "data": "2026-03-12", "motivo": "Demanda Finalizada", "obs": ""}, {"nome": "Danilo L Paulino", "empresa": "WA Administração", "origem": "OHub", "contato": "11 98432 7524", "fase": "Atendimento Encerrado", "data": "2026-03-12", "motivo": "Sem resposta", "obs": ""}, {"nome": "Andrea de Castilho Albero", "empresa": "MegaEdu", "origem": "OHub", "contato": "11 99173 7878", "fase": "Declinou", "data": "2026-03-12", "motivo": "Fora do Orçamento", "obs": ""}, {"nome": "Isabele Luiza", "empresa": "Nova Civik", "origem": "OHub", "contato": "7193297189.0", "fase": "Declinou", "data": "2026-03-13", "motivo": "Sem resposta", "obs": ""}, {"nome": "Karina Lovizi", "empresa": "Craw Comercial", "origem": "OHub", "contato": "11 99398 6395", "fase": "Declinou", "data": "2026-03-13", "motivo": "Fora do Orçamento", "obs": ""}, {"nome": "Leticia Silva Mendes", "empresa": "99 Tech", "origem": "OHub", "contato": "11 98215 0310", "fase": "Declinou", "data": "2026-03-13", "motivo": "Fora do Orçamento", "obs": ""}, {"nome": "Carolina Santos", "empresa": "Platinum Cabo", "origem": "OHub", "contato": "14 98163 3191", "fase": "Atendimento Encerrado", "data": "2026-03-13", "motivo": "Sem resposta", "obs": "Mesmo cliente diferente CNPJ"}, {"nome": "Ricardo Iglesias", "empresa": "MGM Comercio", "origem": "OHub", "contato": "7191995089.0", "fase": "Declinou", "data": "2026-03-13", "motivo": "Demanda adiada", "obs": ""}, {"nome": "Pedro Antonio Faria", "empresa": "Bio", "origem": "OHub", "contato": "11 99758 0705", "fase": "Atendimento Encerrado", "data": "2026-03-16", "motivo": "Sem resposta", "obs": ""}, {"nome": "Larissa Tomé Silva", "empresa": "Metalinox Cgne", "origem": "OHub", "contato": "11 2101 9029", "fase": "Declinou", "data": "2026-03-17", "motivo": "Fora do Orçamento", "obs": ""}, {"nome": "Marco tulio", "empresa": "Exito Advocacia", "origem": "OHub", "contato": "3491862955.0", "fase": "Atendimento Encerrado", "data": "2026-03-17", "motivo": "Sem resposta", "obs": ""}, {"nome": "YANES MC FADDEN FRANTZESKOS", "empresa": "YMEC", "origem": "OHub", "contato": "11 94732 0732", "fase": "Atendimento Encerrado", "data": "2026-03-17", "motivo": "Sem resposta", "obs": ""}, {"nome": "Anna Carolina de Sousa", "empresa": "Easyfast Tech Soluções", "origem": "OHub", "contato": "11 3900 4000", "fase": "Atendimento Encerrado", "data": "2026-03-17", "motivo": "Sem resposta", "obs": ""}, {"nome": "Ketlyn Reis", "empresa": "Onze Corretora de Seguros", "origem": "OHub", "contato": "11 98170-7316", "fase": "Atendimento Encerrado", "data": "2026-03-18", "motivo": "Sem resposta", "obs": ""}, {"nome": "Ariane Stefania Silva Neves", "empresa": "Clinica Medica Croce", "origem": "OHub", "contato": "11 97081 4868", "fase": "Declinou", "data": "2026-03-18", "motivo": "Fora do Orçamento", "obs": ""}, {"nome": "Lucielda Rodrigues", "empresa": "M. Bergmann", "origem": "OHub", "contato": "11 95061 3127", "fase": "Declinou", "data": "2026-03-19", "motivo": "Fora do Orçamento", "obs": ""}, {"nome": "Manoela Brasil de Abreu", "empresa": "Loja Brasil", "origem": "OHub", "contato": "11 99808 5225", "fase": "Atendimento Encerrado", "data": "2026-03-19", "motivo": "Sem resposta", "obs": ""}, {"nome": "Roana Cristina", "empresa": "TEN tech", "origem": "Inboud", "contato": "21 98649 0207", "fase": "Declinou", "data": "2026-03-20", "motivo": "Demanda Finalizada", "obs": ""}, {"nome": "Alan Safuan", "empresa": "Infield Program", "origem": "OHub", "contato": "11 97038 6170", "fase": "Atendimento Encerrado", "data": "2026-03-25", "motivo": "Fora do Orçamento", "obs": ""}, {"nome": "Ulisses de Araújo", "empresa": "(CETEFE)", "origem": "OHub", "contato": "24 99222 9696", "fase": "Negociação", "data": "2026-03-25", "motivo": "", "obs": ""}, {"nome": "Karina Medrado", "empresa": "JD Trade", "origem": "OHub", "contato": "11 91185 0991", "fase": "Atendimento Encerrado", "data": "2026-03-25", "motivo": "Sem resposta", "obs": ""}, {"nome": "Fernanda Ferreira", "empresa": "Inspira Desenvolvimento", "origem": "OHub", "contato": "5198383596.0", "fase": "Atendimento Encerrado", "data": "2026-03-25", "motivo": "Sem resposta", "obs": ""}, {"nome": "Luiz Arthur Cury", "empresa": "AgroGalaxy", "origem": "Linkedin", "contato": "16 98158 1676", "fase": "Atendimento Encerrado", "data": "2026-03-25", "motivo": "Demanda adiada", "obs": ""}, {"nome": "Leandro Paz", "empresa": "Plenicom", "origem": "OHub", "contato": "11 94720 3723", "fase": "Declinou", "data": "2026-03-26", "motivo": "Sem resposta", "obs": ""}, {"nome": "Fabio Roberto", "empresa": "Kenosoft", "origem": "OHub", "contato": "11 95291 4605", "fase": "Atendimento Encerrado", "data": "2026-03-26", "motivo": "Sem resposta", "obs": ""}, {"nome": "Miriam dos Anjos", "empresa": "Zilhões Arte em Confecção", "origem": "OHub", "contato": "11 98942 8148", "fase": "Declinou", "data": "2026-03-26", "motivo": "Sem resposta", "obs": ""}, {"nome": "Clovis", "empresa": "RSC", "origem": "OHub", "contato": "(51) 99497-0384", "fase": "Atendimento Encerrado", "data": "2026-03-27", "motivo": "Sem resposta", "obs": ""}, {"nome": "Ederson Vian", "empresa": "GSTN", "origem": "OHub", "contato": "19999197007.0", "fase": "Atendimento Encerrado", "data": "2026-03-27", "motivo": "Sem resposta", "obs": ""}, {"nome": "Big Alimentos", "empresa": "Stella Mendes", "origem": "OHub", "contato": "11941343280.0", "fase": "Atendimento Encerrado", "data": "2026-03-27", "motivo": "Sem resposta", "obs": ""}, {"nome": "Lacerda Sistemas", "empresa": "Lourdes", "origem": "OHub", "contato": "11999761395.0", "fase": "Declinou", "data": "2026-03-30", "motivo": "Fora do Orçamento", "obs": ""}, {"nome": "Dalton Dynamics Química", "empresa": "Angelo Zani", "origem": "OHub", "contato": "11964842458.0", "fase": "Declinou", "data": "2026-03-31", "motivo": "Demanda Finalizada", "obs": ""}, {"nome": "Fotus Solar", "empresa": "Gabrielly Aguiar Vieira", "origem": "OHub", "contato": "27998755867.0", "fase": "Declinou", "data": "2026-03-31", "motivo": "Demanda Finalizada", "obs": ""}, {"nome": "DL TECH", "empresa": "Leonardo Rocha Barroso", "origem": "OHub", "contato": "11970680171.0", "fase": "Declinou", "data": "2026-03-31", "motivo": "Fora do Orçamento", "obs": ""}, {"nome": "Patricia Vieira", "empresa": "Associação Jardins França", "origem": "OHub", "contato": "6282819792.0", "fase": "Atendimento Encerrado", "data": "2026-04-01", "motivo": "Demanda Finalizada", "obs": "Fechou por indicação"}, {"nome": "Vanderleia Inocente da Silva", "empresa": "Thorco Industrial", "origem": "OHub", "contato": "11 98283 9530", "fase": "Atendimento Encerrado", "data": "2026-04-02", "motivo": "Sem resposta", "obs": ""}, {"nome": "Eloisa Rocha", "empresa": "Syncrofilm Distribuidora Ltda", "origem": "OHub", "contato": "11 99519 1324", "fase": "Declinou", "data": "2026-04-02", "motivo": "Fora do Orçamento", "obs": ""}, {"nome": "Talissa Aparecida", "empresa": "Liberum Ratings", "origem": "OHub", "contato": "11 93095 3232", "fase": "Atendimento Encerrado", "data": "2026-04-06", "motivo": "Demanda Finalizada", "obs": "Fechou com outro RH"}, {"nome": "Gecimar Pereira", "empresa": "EITED", "origem": "OHub", "contato": "6784780156.0", "fase": "Proposta enviada", "data": "2026-04-06", "motivo": "", "obs": ""}, {"nome": "Maria da Paixão", "empresa": "Grupo FZ", "origem": "OHub", "contato": "9182800063.0", "fase": "Atendimento Encerrado", "data": "2026-04-06", "motivo": "Demanda Finalizada", "obs": ""}, {"nome": "Andreia Santana", "empresa": "GBB Advogados", "origem": "OHub", "contato": "11 95048 8707", "fase": "Proposta enviada", "data": "2026-04-06", "motivo": "", "obs": ""}, {"nome": "Paulo Teixeira", "empresa": "TXR", "origem": "Inboud", "contato": "17 99661 9197", "fase": "Declinou", "data": "2026-04-07", "motivo": "Fora do Orçamento", "obs": ""}, {"nome": "Tarcisio Campos", "empresa": "Uniao Polimeros", "origem": "OHub", "contato": "3195394318.0", "fase": "Atendimento Encerrado", "data": "2026-04-10", "motivo": "", "obs": ""}, {"nome": "Ebony Santos", "empresa": "Contclaro", "origem": "OHub", "contato": "11 99656 8880", "fase": "Proposta enviada", "data": "2026-04-13", "motivo": "", "obs": ""}, {"nome": "Fabiano Ferreira", "empresa": "FastEscova", "origem": "OHub", "contato": "55 6282040470", "fase": "Sem resposta", "data": "2026-04-14", "motivo": "", "obs": ""}, {"nome": "Danieli Abrantes Dos Santos", "empresa": "UMBRA PACKAGING", "origem": "Inboud", "contato": "11 95979 0156", "fase": "Proposta enviada", "data": "2026-04-15", "motivo": "", "obs": ""}, {"nome": "Ricardo Machado Rodrigues", "empresa": "Drone Sistemas", "origem": "OHub", "contato": "11 97245 8282", "fase": "Declinou", "data": "2026-04-16", "motivo": "Fora do Orçamento", "obs": ""}, {"nome": "Ana Cristina Alves de Lima", "empresa": "Vigna Advogados Associados", "origem": "OHub", "contato": "11 96728 2568", "fase": "Reunião agendada", "data": "2026-04-16", "motivo": "", "obs": ""}, {"nome": "Isabela Ferreira Milagre", "empresa": "Bossa Furniture", "origem": "OHub", "contato": "11 94533 6986", "fase": "Proposta enviada", "data": "2026-04-17", "motivo": "", "obs": ""}, {"nome": "Thomas", "empresa": "Thorco Industrial", "origem": "Site", "contato": "11996031475.0", "fase": "Proposta enviada", "data": "2000-05-22", "motivo": "", "obs": ""}, {"nome": "José Lucas Nocera", "empresa": "LaserDay", "origem": "OHub", "contato": "11 97963 7132", "fase": "Proposta enviada", "data": "2026-04-23", "motivo": "", "obs": ""}, {"nome": "Renata", "empresa": "INconnet Solucoes", "origem": "Site", "contato": "11 97613 7756", "fase": "Proposta enviada", "data": "2026-04-24", "motivo": "", "obs": ""}, {"nome": "Monica Barcelos", "empresa": "Abrapango", "origem": "OHub", "contato": "6183358294.0", "fase": "Reunião agendada", "data": "2026-04-24", "motivo": "", "obs": ""}];
+const SEED_IND = [{"mes": "Fevereiro", "reuniao": "Felipe VRF Contabilidade", "proposta": "VRF Contabilidade", "fechado": "Fechado", "fonte": "Mapeamento", "servico": "R&S", "obs": ""}, {"mes": "Março", "reuniao": "", "proposta": "Amey Uniformes", "fechado": "Declinou", "fonte": "OHub", "servico": "", "obs": ""}, {"mes": "Março", "reuniao": "", "proposta": "Roderotas", "fechado": "Declinou", "fonte": "OHub", "servico": "", "obs": ""}, {"mes": "Março", "reuniao": "Vivian Miranda - Ourto Vet", "proposta": "OuroVet", "fechado": "Declinou", "fonte": "OHub", "servico": "Terceirização de RH", "obs": ""}, {"mes": "Março", "reuniao": "", "proposta": "GS MANTOS", "fechado": "", "fonte": "OHub", "servico": "Terceirização", "obs": ""}, {"mes": "Março", "reuniao": "", "proposta": "Craw Comercial", "fechado": "Declinou", "fonte": "OHub", "servico": "", "obs": ""}, {"mes": "Março", "reuniao": "", "proposta": "SP Brasil", "fechado": "Declinou", "fonte": "OHub", "servico": "", "obs": ""}, {"mes": "Março", "reuniao": "Cristine Fulchini  - Prolata", "proposta": "Prolata", "fechado": "Declinou", "fonte": "OHub", "servico": "NR1", "obs": ""}, {"mes": "Março", "reuniao": "***Vitoria Moraes - Ashoka", "proposta": "Ashoka", "fechado": "Declinou", "fonte": "OHub", "servico": "NR1", "obs": "*Tive consulta, não participei"}, {"mes": "Março", "reuniao": "Jaqueline Pegoretti - Magna Moralia", "proposta": "Magna Moralia", "fechado": "Declinou", "fonte": "OHub", "servico": "Terceirização de RH", "obs": ""}, {"mes": "Março", "reuniao": "Andrea de Castilho - MegaEdu", "proposta": "MegaEdu", "fechado": "Declinou", "fonte": "OHub", "servico": "NR1", "obs": ""}, {"mes": "Março", "reuniao": "Isabele Luiza - Nova Civik", "proposta": "Nova Civik", "fechado": "Declinou", "fonte": "OHub", "servico": "Terceirização de RH", "obs": ""}, {"mes": "Março", "reuniao": "Larissa Tomé Silva - Metalinox", "proposta": "Metalinox", "fechado": "Declinou", "fonte": "OHub", "servico": "NR1", "obs": ""}, {"mes": "Março", "reuniao": "", "proposta": "Laticinios Litoral Norte", "fechado": "Declinou", "fonte": "OHub", "servico": "R&S", "obs": ""}, {"mes": "Março", "reuniao": "", "proposta": "Ymec", "fechado": "Declinou", "fonte": "OHub", "servico": "NR1", "obs": ""}, {"mes": "Março", "reuniao": "", "proposta": "Clinica Croce", "fechado": "Declinou", "fonte": "OHub", "servico": "Treinamento", "obs": ""}, {"mes": "Março", "reuniao": "Lucielda Rodrigues - M. Bergmann", "proposta": "M. Bergmann", "fechado": "Declinou", "fonte": "OHub", "servico": "NR1", "obs": ""}, {"mes": "Março", "reuniao": "Roana Cristina - TEN", "proposta": "TEN", "fechado": "Declinou", "fonte": "Lead", "servico": "R&S", "obs": ""}, {"mes": "Março", "reuniao": "Ulisses de Araújo - CETEFE", "proposta": "CETEFE", "fechado": "Aguardando", "fonte": "OHub", "servico": "Terceirização", "obs": ""}, {"mes": "Março", "reuniao": "", "proposta": "Infield Program", "fechado": "Declinou", "fonte": "OHub", "servico": "Terceirização", "obs": ""}, {"mes": "Março", "reuniao": "Leandro Paz - Plenicom", "proposta": "Plenicom", "fechado": "Declinou", "fonte": "OHub", "servico": "Terceirização", "obs": ""}, {"mes": "Março", "reuniao": "Miriam -Zilhoes", "proposta": "Zilhoes Confecção", "fechado": "Declinou", "fonte": "OHub", "servico": "NR1", "obs": ""}, {"mes": "Março", "reuniao": "Equipe FL Brokers", "proposta": "FL Brokers", "fechado": "Declinou", "fonte": "OHub", "servico": "R&S", "obs": ""}, {"mes": "Março", "reuniao": "Leonardo Rocha - DL Tech", "proposta": "DL TECH", "fechado": "Declinou", "fonte": "OHub", "servico": "Terceirização de RH", "obs": ""}, {"mes": "Abril", "reuniao": "Gabrielly Aguiar - Fotus Solar", "proposta": "Fotus Solar", "fechado": "Declinou", "fonte": "OHub", "servico": "R&S", "obs": ""}, {"mes": "Abril", "reuniao": "", "proposta": "Dalton Dynamics Química", "fechado": "Declinou", "fonte": "OHub", "servico": "Outplacement", "obs": ""}, {"mes": "Abril", "reuniao": "", "proposta": "Syncrofilm Distribuidora", "fechado": "Declinou", "fonte": "OHub", "servico": "NR1", "obs": ""}, {"mes": "Abril", "reuniao": "Gecimar Pereira - EITEC", "proposta": "EITEC", "fechado": "Aguardando", "fonte": "OHub", "servico": "Terceirização", "obs": ""}, {"mes": "Abril", "reuniao": "Paulo Teixeira - TXR", "proposta": "TXR", "fechado": "Declinou", "fonte": "Lead", "servico": "Terceirização", "obs": ""}, {"mes": "Abril", "reuniao": "", "proposta": "GBB Advogados", "fechado": "Aguardando", "fonte": "OHub", "servico": "Treinamento", "obs": ""}, {"mes": "Abril", "reuniao": "", "proposta": "UMBRA PACKAGING", "fechado": "Aguardando", "fonte": "Lead", "servico": "Terceirização", "obs": ""}, {"mes": "Abril", "reuniao": "", "proposta": "Contclaro", "fechado": "Aguardando", "fonte": "OHub", "servico": "NR-1", "obs": ""}, {"mes": "Abril", "reuniao": "Ricardo Machado Rodrigues", "proposta": "Drone Sistemas", "fechado": "Declinou", "fonte": "OHub", "servico": "Terceirização", "obs": ""}, {"mes": "Abril", "reuniao": "Vithoria", "proposta": "Bossa Furniture", "fechado": "Aguardando", "fonte": "OHub", "servico": "Terceirização", "obs": ""}, {"mes": "Abril", "reuniao": "Thomas", "proposta": "Thorco Industrial", "fechado": "Aguardando", "fonte": "Inboud", "servico": "Terceirização", "obs": ""}, {"mes": "Abril", "reuniao": "", "proposta": "LaserDay", "fechado": "Aguardando", "fonte": "OHub", "servico": "R&S", "obs": ""}, {"mes": "Abril", "reuniao": "", "proposta": "INconnet Solucoes", "fechado": "Aguardando", "fonte": "Inboud", "servico": "R&S", "obs": ""}];
+
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2);
+
+function load(key,seed){
+  try{const v=localStorage.getItem(key);if(v)return JSON.parse(v);}catch(e){}
+  return seed.map(r=>({id:uid(),proxdata:'',grazi:'Não',servico:'',...r}));
+}
+function save(key,data){try{localStorage.setItem(key,JSON.stringify(data));}catch(e){}}
+
+let leads=load('ynq_leads2',SEED_LEADS);
+let ind=load('ynq_ind2',SEED_IND);
+
+const FASES=['Atendimento inicial','Reunião agendada','Reunião Realizada','Proposta enviada','Aguardando Retorno','Negociação','Fechado','Sem resposta','Pausou Demanda','Atendimento Encerrado','Declinou'];
+const FASE_ATIVA=['Atendimento inicial','Reunião agendada','Reunião Realizada','Proposta enviada','Aguardando Retorno','Negociação'];
+const FASE_COR={'Atendimento inicial':'bi','Reunião agendada':'bg','Reunião Realizada':'bg','Proposta enviada':'bw','Aguardando Retorno':'bw','Negociação':'bw','Fechado':'bgr','Sem resposta':'bgy','Pausou Demanda':'bgy','Atendimento Encerrado':'bgy','Declinou':'br'};
+
+document.querySelectorAll('.nav-item').forEach(el=>{
+  el.addEventListener('click',function(){
+    document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+    this.classList.add('active');
+    const p=this.dataset.page;
+    document.getElementById('page-'+p).classList.add('active');
+    render(p);
+  });
+});
+
+function render(p){
+  if(p==='dashboard')rDash();
+  else if(p==='hoje')rHoje();
+  else if(p==='kanban')rKanban();
+  else if(p==='contatos')rContatos();
+  else if(p==='indicadores')rInd();
+  else if(p==='backup')rBackup();
+}
+
+function rDash(){
+  const ativos=leads.filter(l=>FASE_ATIVA.includes(l.fase));
+  const fechados=leads.filter(l=>l.fase==='Fechado');
+  const props=leads.filter(l=>l.fase==='Proposta enviada');
+  const urg=getUrg();
+  document.getElementById('d-metrics').innerHTML=`
+    <div class="mc"><div class="mc-lbl">Total contatos</div><div class="mc-val">${leads.length}</div><div class="mc-sub">na base</div></div>
+    <div class="mc"><div class="mc-lbl">Pipeline ativo</div><div class="mc-val">${ativos.length}</div><div class="mc-sub">em andamento</div></div>
+    <div class="mc"><div class="mc-lbl">Propostas abertas</div><div class="mc-val">${props.length}</div><div class="mc-sub">aguardando</div></div>
+    <div class="mc hl"><div class="mc-lbl">Fechamentos</div><div class="mc-val">${fechados.length}</div><div class="mc-sub">contratos</div></div>
+    <div class="mc"><div class="mc-lbl">Follow-ups hoje</div><div class="mc-val">${urg.length}</div><div class="mc-sub">ações pendentes</div></div>`;
+  const pipeTbody=document.createElement('tbody');
+  FASE_ATIVA.forEach(f=>{
+    const group=leads.filter(l=>l.fase===f);
+    if(!group.length) return;
+    const tr=document.createElement('tr');
+    tr.style.cursor='pointer';
+    tr.title='Clique para ver os contatos desta etapa';
+    tr.innerHTML=`<td style="font-weight:500">${f}</td><td><div style="display:flex;align-items:center;gap:7px"><div style="height:5px;border-radius:3px;background:var(--gold);width:${Math.min(group.length*28,110)}px"></div><span style="font-size:12px;color:var(--muted)">${group.length}</span></div></td>`;
+    tr.addEventListener('click',()=>openFaseModal(f));
+    pipeTbody.appendChild(tr);
+  });
+  const pipeTable=document.createElement('table');
+  pipeTable.innerHTML='<thead><tr><th>Etapa</th><th>Leads</th></tr></thead>';
+  if(pipeTbody.children.length===0) pipeTbody.innerHTML='<tr><td colspan="2" style="padding:20px;text-align:center;color:var(--muted)">Nenhum lead ativo</td></tr>';
+  pipeTable.appendChild(pipeTbody);
+  document.getElementById('d-pipe').innerHTML='';
+  document.getElementById('d-pipe').appendChild(pipeTable);
+  const fuHTML=urg.slice(0,5).map(l=>`<div class="fl-item urg" onclick="openDet('${l.id}')"><div><div class="fl-n">${l.nome} — ${l.empresa}</div><div class="fl-d">${l.fase}</div></div><span class="badge br">Hoje</span></div>`).join('');
+  document.getElementById('d-fu').innerHTML=fuHTML?`<div class="fl-list">${fuHTML}</div>`:`<div class="al al-s">Nenhum follow-up urgente hoje ✓</div>`;
+  updateNavN(urg.length);
+}
+
+function getUrg(){const hoje=new Date().toISOString().slice(0,10);return leads.filter(l=>l.proxdata&&l.proxdata<=hoje&&FASE_ATIVA.includes(l.fase));}
+function updateNavN(n){const el=document.getElementById('nav-n');el.textContent=n;el.style.display=n>0?'inline-block':'none';}
+
+function rHoje(){
+  const urg=getUrg();
+  const outros=leads.filter(l=>FASE_ATIVA.includes(l.fase)&&(!l.proxdata||l.proxdata>new Date().toISOString().slice(0,10)));
+  let h='';
+  if(urg.length){
+    h+=`<div style="font-size:13px;font-weight:600;color:var(--danger);margin-bottom:9px">⚠ Para hoje (${urg.length})</div>`;
+    h+=`<div class="fl-list" style="margin-bottom:20px">${urg.map(l=>`<div class="fl-item urg" onclick="openDet('${l.id}')"><div><div class="fl-n">${l.nome} — ${l.empresa}</div><div class="fl-d">${l.fase} · ${l.obs||'Sem obs'}</div></div><div style="display:flex;gap:5px">${l.grazi&&l.grazi!=='Não'?`<span class="badge bg">Grazi</span>`:''}<button class="btn btn-out btn-sm" onclick="event.stopPropagation();editar('${l.id}')">Editar</button></div></div>`).join('')}</div>`;
+  }
+  if(outros.length){
+    h+=`<div style="font-size:13px;font-weight:600;margin-bottom:9px">Próximos follow-ups</div>`;
+    h+=`<div class="fl-list">${outros.map(l=>`<div class="fl-item" onclick="openDet('${l.id}')"><div><div class="fl-n">${l.nome} — ${l.empresa}</div><div class="fl-d">${l.fase} · próxima ação: ${l.proxdata||'não definida'}</div></div><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();editar('${l.id}')">Editar</button></div>`).join('')}</div>`;
+  }
+  if(!urg.length&&!outros.length)h=`<div style="text-align:center;padding:36px;color:var(--muted)"><div style="font-size:32px;margin-bottom:10px">✓</div><p>Nenhuma ação pendente.</p></div>`;
+  document.getElementById('hoje-content').innerHTML=h;
+}
+
+let dragId=null;
+
+function rKanban(){
+  const hoje=new Date().toISOString().slice(0,10);
+  const board=document.getElementById('kb');
+  board.innerHTML='';
+
+  FASES.forEach(fase=>{
+    const cards=leads.filter(l=>l.fase===fase);
+    const col=document.createElement('div');
+    col.className='kc';
+    col.dataset.fase=fase;
+    col.innerHTML=`<div class="kch"><span class="kcn">${fase}</span><span class="kcc">${cards.length}</span></div>`;
+
+    const kcs=document.createElement('div');
+    kcs.className='kcs';
+    kcs.dataset.fase=fase;
+
+    kcs.addEventListener('dragover',e=>{
+      e.preventDefault();
+      kcs.classList.add('kcs-over');
+      const afterEl=getDragAfterEl(kcs,e.clientY);
+      const ghost=document.querySelector('.kcard-dragging');
+      if(ghost){ if(afterEl) kcs.insertBefore(ghost,afterEl); else kcs.appendChild(ghost); }
+    });
+    kcs.addEventListener('dragleave',e=>{
+      if(!kcs.contains(e.relatedTarget)) kcs.classList.remove('kcs-over');
+    });
+    kcs.addEventListener('drop',e=>{
+      e.preventDefault();
+      kcs.classList.remove('kcs-over');
+      if(!dragId) return;
+      const lead=leads.find(l=>l.id===dragId);
+      if(lead && lead.fase!==fase){ lead.fase=fase; save('ynq_leads2',leads); }
+      rKanban();
+      if(document.getElementById('page-contatos').classList.contains('active')) filterCt();
+    });
+
+    if(!cards.length){
+      const ph=document.createElement('div');
+      ph.style.cssText='height:50px;border:1px dashed var(--border);border-radius:var(--rsm);opacity:.4';
+      kcs.appendChild(ph);
+    }
+
+    cards.forEach(l=>{
+      const card=document.createElement('div');
+      card.className='kcard';
+      card.draggable=true;
+      card.dataset.id=l.id;
+      card.innerHTML=`<div class="kcard-n">${l.nome}</div><div class="kcard-e">${l.empresa}</div><div class="kcard-f"><span class="kcard-o">${l.origem||''}</span><div style="display:flex;gap:3px">${l.grazi&&l.grazi!=='Nao'?'<span class="badge bg" style="font-size:10px">Grazi</span>':''}${l.proxdata&&l.proxdata<=hoje?'<span style="font-size:10px;color:var(--danger);font-weight:500">FU</span>':''}</div></div>`;
+
+      let wasDragged=false;
+      card.addEventListener('dragstart',e=>{
+        dragId=l.id;
+        wasDragged=false;
+        e.dataTransfer.effectAllowed='move';
+        setTimeout(()=>card.classList.add('kcard-dragging'),0);
+      });
+      card.addEventListener('dragend',()=>{
+        wasDragged=true;
+        dragId=null;
+        card.classList.remove('kcard-dragging');
+        document.querySelectorAll('.kcs-over').forEach(el=>el.classList.remove('kcs-over'));
+        setTimeout(()=>{ wasDragged=false; },200);
+      });
+      card.addEventListener('click',()=>{ if(!wasDragged) openDet(l.id); });
+      kcs.appendChild(card);
+    });
+
+    col.appendChild(kcs);
+    board.appendChild(col);
+  });
+}
+
+function getDragAfterEl(container,y){
+  const els=[...container.querySelectorAll('.kcard:not(.kcard-dragging)')];
+  return els.reduce((closest,el)=>{
+    const box=el.getBoundingClientRect();
+    const offset=y-box.top-box.height/2;
+    if(offset<0&&offset>closest.offset) return{offset,el};
+    return closest;
+  },{offset:Number.NEGATIVE_INFINITY}).el;
+}
+
+function rContatos(){
+  document.getElementById('ct-sub').textContent=`${leads.length} contatos na base`;
+  const fs=document.getElementById('q-fase'),cv=fs.value;
+  fs.innerHTML='<option value="">Todas as fases</option>'+FASES.map(f=>`<option ${f===cv?'selected':''}>${f}</option>`).join('');
+  const os=document.getElementById('q-orig'),ov=os.value;
+  const origens=[...new Set(leads.map(l=>l.origem).filter(Boolean))].sort();
+  os.innerHTML='<option value="">Todas as origens</option>'+origens.map(o=>`<option ${o===ov?'selected':''}>${o}</option>`).join('');
+  filterCt();
+}
+
+function filterCt(){
+  const q=(document.getElementById('q-input')?.value||'').toLowerCase();
+  const fase=document.getElementById('q-fase')?.value||'';
+  const orig=document.getElementById('q-orig')?.value||'';
+  const f=leads.filter(l=>(!q||l.nome.toLowerCase().includes(q)||l.empresa.toLowerCase().includes(q)||(l.contato||'').toLowerCase().includes(q))&&(!fase||l.fase===fase)&&(!orig||l.origem===orig));
+  document.getElementById('ct-body').innerHTML=f.length
+    ?f.map(l=>`<tr onclick="openDet('${l.id}')" style="cursor:pointer"><td class="dn">${l.nome}</td><td>${l.empresa}</td><td class="dm">${l.origem||'—'}</td><td><span class="badge ${FASE_COR[l.fase]||'bgy'}">${l.fase}</span></td><td class="dm">${l.data?l.data.split('-').reverse().join('/'):'—'}</td><td class="dm" style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.motivo||'—'}</td><td><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();editar('${l.id}')">Editar</button></td></tr>`).join('')
+    :`<tr><td colspan="7" style="text-align:center;padding:28px;color:var(--muted)">Nenhum contato encontrado.</td></tr>`;
+}
+
+function mkInp(id,campo,val,width){
+  const inp=document.createElement('input');
+  inp.className='ind-inp';
+  if(width)inp.style.width=width;
+  inp.value=val||'';
+  inp.addEventListener('change',function(){updInd(id,campo,this.value);});
+  return inp;
+}
+function rInd(){
+  const tbody=document.getElementById('ind-body');
+  tbody.innerHTML='';
+  ind.forEach(r=>{
+    const tr=document.createElement('tr');
+    const cells=[
+      {campo:'mes',width:'80px'},{campo:'reuniao',width:'150px'},{campo:'proposta',width:'130px'},
+      {campo:'fechado',width:'90px'},{campo:'fonte',width:'80px'},{campo:'servico',width:'120px'},{campo:'obs',width:''}
+    ];
+    cells.forEach(({campo,width})=>{
+      const td=document.createElement('td');
+      td.appendChild(mkInp(r.id,campo,r[campo],width));
+      tr.appendChild(td);
+    });
+    const tdDel=document.createElement('td');
+    const btn=document.createElement('button');
+    btn.className='btn btn-ghost btn-sm';btn.textContent='✕';
+    btn.addEventListener('click',()=>delInd(r.id));
+    tdDel.appendChild(btn);tr.appendChild(tdDel);
+    tbody.appendChild(tr);
+  });
+  const totR=ind.filter(r=>r.reuniao).length,totP=ind.filter(r=>r.proposta).length,totF=ind.filter(r=>r.fechado==='Fechado').length,totAg=ind.filter(r=>r.fechado==='Aguardando').length;
+  const conv=totP>0?Math.round(totF/totP*100):0;
+  document.getElementById('ind-totais').innerHTML=`<div class="mc"><div class="mc-lbl">Reuniões</div><div class="mc-val">${totR}</div></div><div class="mc"><div class="mc-lbl">Propostas</div><div class="mc-val">${totP}</div></div><div class="mc hl"><div class="mc-lbl">Fechamentos</div><div class="mc-val">${totF}</div></div><div class="mc"><div class="mc-lbl">Aguardando</div><div class="mc-val">${totAg}</div></div><div class="mc"><div class="mc-lbl">Conversão</div><div class="mc-val">${conv}%</div><div class="mc-sub">proposta→fechado</div></div>`;
+}
+
+function updInd(id,campo,val){const r=ind.find(x=>x.id===id);if(r){r[campo]=val;save('ynq_ind2',ind);}}
+function delInd(id){if(!confirm('Remover?'))return;ind=ind.filter(x=>x.id!==id);save('ynq_ind2',ind);rInd();}
+function addInd(){ind.push({id:uid(),mes:'',reuniao:'',proposta:'',fechado:'',fonte:'',servico:'',obs:''});save('ynq_ind2',ind);rInd();}
+function exportInd(){const ws=XLSX.utils.json_to_sheet(ind.map(r=>({'Mês':r.mes,'Reuniões':r.reuniao,'Propostas enviadas':r.proposta,'Fechado':r.fechado,'Fonte':r.fonte,'Serviço':r.servico,'Obs':r.obs})));const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Indicadores 2026');XLSX.writeFile(wb,'youniq_indicadores_2026.xlsx');}
+
+let curId=null;
+function openModal(id){
+  if(id==='lead'){
+    document.getElementById('ml-title').textContent='Novo contato';
+    document.getElementById('e-id').value='';
+    ['nome','empresa','contato','motivo','obs'].forEach(f=>document.getElementById('e-'+f).value='');
+    ['origem','fase','servico'].forEach(f=>document.getElementById('e-'+f).value='');
+    document.getElementById('e-grazi').value='Não';
+    document.getElementById('e-data').value=new Date().toISOString().slice(0,10);
+    document.getElementById('e-proxdata').value='';
+  }
+  document.getElementById('mo-'+id).classList.add('open');
+}
+function closeModal(id){document.getElementById('mo-'+id).classList.remove('open');}
+
+function salvar(){
+  const nome=document.getElementById('e-nome').value.trim();
+  const empresa=document.getElementById('e-empresa').value.trim();
+  const fase=document.getElementById('e-fase').value;
+  if(!nome||!empresa||!fase){alert('Preencha nome, empresa e fase.');return;}
+  const d={nome,empresa,fase,origem:document.getElementById('e-origem').value,contato:document.getElementById('e-contato').value,data:document.getElementById('e-data').value,proxdata:document.getElementById('e-proxdata').value,servico:document.getElementById('e-servico').value,grazi:document.getElementById('e-grazi').value,motivo:document.getElementById('e-motivo').value,obs:document.getElementById('e-obs').value};
+  const eid=document.getElementById('e-id').value;
+  if(eid){const i=leads.findIndex(l=>l.id===eid);if(i>-1)leads[i]={...leads[i],...d};}
+  else leads.push({id:uid(),...d});
+  save('ynq_leads2',leads);closeModal('lead');closeModal('det');
+  const ap=document.querySelector('.nav-item.active')?.dataset?.page;if(ap)render(ap);else rDash();
+}
+
+function editar(id){
+  const l=leads.find(x=>x.id===id);if(!l)return;
+  // preenche ANTES de abrir — sem passar por openModal que reseta os campos
+  document.getElementById('ml-title').textContent='Editar contato';
+  document.getElementById('e-id').value=id;
+  document.getElementById('e-nome').value=l.nome||'';
+  document.getElementById('e-empresa').value=l.empresa||'';
+  document.getElementById('e-origem').value=l.origem||'';
+  document.getElementById('e-contato').value=l.contato||'';
+  document.getElementById('e-fase').value=l.fase||'';
+  document.getElementById('e-data').value=l.data||'';
+  document.getElementById('e-proxdata').value=l.proxdata||'';
+  document.getElementById('e-servico').value=l.servico||'';
+  document.getElementById('e-grazi').value=l.grazi||'Não';
+  document.getElementById('e-motivo').value=l.motivo||'';
+  document.getElementById('e-obs').value=l.obs||'';
+  // abre direto — sem resetar
+  document.getElementById('mo-lead').classList.add('open');
+}
+
+function openDet(id){
+  const l=leads.find(x=>x.id===id);if(!l)return;
+  curId=id;
+  document.getElementById('det-title').textContent=`${l.nome}`;
+
+  const body=document.getElementById('det-body');
+  body.innerHTML='';
+
+  // Badges
+  const badges=document.createElement('div');
+  badges.style.cssText='display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;align-items:center';
+  badges.innerHTML=`<span class="badge ${FASE_COR[l.fase]||'bgy'}" style="font-size:12px;padding:4px 10px">${l.fase}</span>${l.servico?`<span class="badge bi">${l.servico}</span>`:''}${l.grazi&&l.grazi!=='Não'?`<span class="badge bg">👤 Grazi: ${l.grazi}</span>`:''}`;
+  body.appendChild(badges);
+
+  // Empresa destaque
+  const emp=document.createElement('div');
+  emp.style.cssText='font-size:17px;font-weight:600;color:var(--dark);margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)';
+  emp.textContent=l.empresa||'—';
+  body.appendChild(emp);
+
+  // Info grid
+  const infos=[
+    {ic:'📱',lbl:'Contato',val:l.contato},
+    {ic:'🔗',lbl:'Origem',val:l.origem},
+    {ic:'📅',lbl:'Data início',val:l.data?l.data.split('-').reverse().join('/'):null},
+    {ic:'⏰',lbl:'Próxima ação',val:l.proxdata?l.proxdata.split('-').reverse().join('/'):null},
+    {ic:'❌',lbl:'Motivo encerramento',val:l.motivo},
+  ];
+
+  const grid=document.createElement('div');
+  grid.style.cssText='display:flex;flex-direction:column;gap:8px;margin-bottom:14px';
+  infos.forEach(({ic,lbl,val})=>{
+    if(!val) return;
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:flex-start;gap:10px';
+    row.innerHTML=`<span style="font-size:15px;width:20px;flex-shrink:0">${ic}</span><div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:500">${lbl}</div><div style="font-size:13px;font-weight:500;color:var(--dark);margin-top:1px">${val}</div></div>`;
+    grid.appendChild(row);
+  });
+  body.appendChild(grid);
+
+  // Mover de fase inline
+  const moveWrap=document.createElement('div');
+  moveWrap.style.cssText='margin-bottom:14px;padding:12px;background:var(--bg);border-radius:var(--rsm);border:1px solid var(--border)';
+  moveWrap.innerHTML=`<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:500;margin-bottom:6px">Mover para fase</div>
+    <select id="det-fase-sel" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--rsm);font-family:'DM Sans',sans-serif;font-size:13px;color:var(--dark);background:var(--white);outline:none">
+      ${FASES.map(f=>`<option value="${f}" ${f===l.fase?'selected':''}>${f}</option>`).join('')}
+    </select>
+    <button onclick="moverFase('${l.id}')" class="btn btn-gold btn-sm" style="margin-top:8px;width:100%;justify-content:center">Confirmar mudança de fase</button>`;
+  body.appendChild(moveWrap);
+
+  // Obs
+  if(l.obs){
+    const obs=document.createElement('div');
+    obs.style.cssText='padding:11px;background:var(--gold-pale);border-radius:var(--rsm);font-size:13px;color:var(--mid);line-height:1.6;border-left:3px solid var(--gold)';
+    obs.textContent=l.obs;
+    body.appendChild(obs);
+  }
+
+  document.getElementById('mo-det').classList.add('open');
+}
+
+function moverFase(id){
+  const novaFase=document.getElementById('det-fase-sel').value;
+  const l=leads.find(x=>x.id===id);
+  if(l&&novaFase){ l.fase=novaFase; save('ynq_leads2',leads); }
+  closeModal('det');
+  const ap=document.querySelector('.nav-item.active')?.dataset?.page;
+  if(ap) render(ap);
+}
+
+
+function openFaseModal(fase){
+  const group=leads.filter(l=>l.fase===fase);
+  const mo=document.getElementById('mo-fase');
+  document.getElementById('mo-fase-title').textContent=fase+' ('+group.length+')';
+  const body=document.getElementById('mo-fase-body');
+  body.innerHTML='';
+
+  if(!group.length){
+    body.innerHTML='<div style="text-align:center;padding:24px;color:var(--muted)">Nenhum contato nesta etapa.</div>';
+  } else {
+    group.forEach(l=>{
+      const item=document.createElement('div');
+      item.style.cssText='display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 14px;border-bottom:1px solid var(--bordersoft);cursor:pointer;transition:background .12s';
+      item.innerHTML=`
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:500;font-size:14px;color:var(--dark)">${l.nome}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">${l.empresa}${l.origem?' · '+l.origem:''}</div>
+          ${l.contato?`<div style="font-size:12px;color:var(--muted);margin-top:1px">📱 ${l.contato}</div>`:''}
+          ${l.proxdata?`<div style="font-size:11px;color:var(--warn);margin-top:3px;font-weight:500">⏰ Próxima ação: ${l.proxdata.split('-').reverse().join('/')}</div>`:''}
+          ${l.obs?`<div style="font-size:12px;color:var(--mid);margin-top:4px;font-style:italic">${l.obs}</div>`:''}
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0">
+          ${l.grazi&&l.grazi!=='Não'?`<span class="badge bg" style="font-size:10px">Grazi</span>`:''}
+          ${l.servico?`<span class="badge bi" style="font-size:10px">${l.servico}</span>`:''}
+          <button class="btn btn-out btn-sm">Ver</button>
+        </div>`;
+      item.addEventListener('mouseenter',()=>item.style.background='var(--gold-pale)');
+      item.addEventListener('mouseleave',()=>item.style.background='');
+      item.addEventListener('click',()=>{ closeModal('fase'); openDet(l.id); });
+      body.appendChild(item);
+    });
+  }
+  mo.classList.add('open');
+}
+function editarAtual(){closeModal('det');editar(curId);}
+function deletar(){if(!confirm('Remover?'))return;leads=leads.filter(l=>l.id!==curId);save('ynq_leads2',leads);closeModal('det');const ap=document.querySelector('.nav-item.active')?.dataset?.page;if(ap)render(ap);}
+
+function dov(e,z){e.preventDefault();document.getElementById(z).classList.add('drag');}
+function dlv(z){document.getElementById(z).classList.remove('drag');}
+function dop(e,tipo){e.preventDefault();const z=tipo==='leads'?'z-ct':'z-ind';dlv(z);const f=e.dataTransfer.files[0];if(f)procFile(f,tipo);}
+function hf(e,tipo){const f=e.target.files[0];if(f)procFile(f,tipo);}
+
+function procFile(file,tipo){
+  const r=new FileReader();
+  r.onload=function(e){
+    const wb=XLSX.read(e.target.result,{type:'binary',cellDates:true});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const data=XLSX.utils.sheet_to_json(ws,{defval:'',raw:false});
+    showPrev(data,tipo);
+  };
+  r.readAsBinaryString(file);
+}
+
+function showPrev(data,tipo){
+  if(!data.length){document.getElementById('imp-prev').innerHTML=`<div class="al al-w">Arquivo vazio ou sem dados reconhecidos.</div>`;return;}
+  const cols=Object.keys(data[0]).filter(c=>c&&c.trim()&&c!=='undefined'&&c!='null');
+  const preview=data.slice(0,6);
+  document.getElementById('imp-prev').innerHTML=`
+    <div style="font-size:13px;font-weight:600;margin-bottom:8px">${data.length} linha(s) encontrada(s) — prévia:</div>
+    <div class="pw"><table><thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>${preview.map(r=>`<tr>${cols.map(c=>`<td>${r[c]??''}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
+    <div style="display:flex;gap:8px;align-items:center;margin-top:12px">
+      <button class="btn btn-gold" id="btn-imp-${tipo}">✓ Importar ${data.length} registros</button>
+      <button class="btn btn-out" onclick="document.getElementById('imp-prev').innerHTML=''">Cancelar</button>
+      <span style="font-size:12px;color:var(--muted)">Dados existentes são mantidos.</span>
+    </div>`;
+  document.getElementById('btn-imp-'+tipo).addEventListener('click',()=>doImport(data,tipo));
+}
+
+function doImport(data,tipo){
+  const get=(row,keys)=>{for(const k of keys){if(row[k]!==undefined&&row[k]!=='')return String(row[k]).trim();}return '';};
+  if(tipo==='leads'){
+    let added=0;
+    data.forEach(row=>{
+      const nome=get(row,['Nome Responsável','Nome Responsavel','Nome','nome']);
+      if(!nome||nome==='None')return;
+      let dataVal='';
+      const rawDate=get(row,['Data Inicio','Data Início','DataInicio','data']);
+      if(rawDate){
+        if(rawDate.match(/^\d{4}-\d{2}-\d{2}/))dataVal=rawDate.slice(0,10);
+        else if(rawDate.match(/^\d{1,2}\/\d{1,2}\/\d{4}/)){const[d,m,y]=rawDate.split('/');dataVal=`${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;}
+        else{try{const dt=new Date(rawDate);if(!isNaN(dt))dataVal=dt.toISOString().slice(0,10);}catch(e){}}
+      }
+      leads.push({id:uid(),nome,empresa:get(row,['Empresa','empresa']),origem:get(row,['Origem','origem']),contato:get(row,['Contato','contato']),fase:get(row,['Fase Atual','Fase','fase'])||'Atendimento Encerrado',data:dataVal,motivo:get(row,['Motivo de Encerramento','Motivo','motivo']),obs:get(row,['Obs','obs','Observações']),proxdata:'',servico:'',grazi:'Não'});
+      added++;
+    });
+    save('ynq_leads2',leads);
+    document.getElementById('imp-prev').innerHTML=`<div class="al al-s">✓ ${added} contatos importados!</div>`;
+  } else {
+    let added=0;
+    data.forEach(row=>{
+      const mes=get(row,['Mês','Mes','mes']);
+      const reuniao=get(row,['Reuniões','Reunioes','reuniao']);
+      const proposta=get(row,['Propostas enviadas','Proposta','proposta']);
+      if(!mes&&!reuniao&&!proposta)return;
+      ind.push({id:uid(),mes,reuniao,proposta,fechado:get(row,['Fechado ','Fechado','fechado']),fonte:get(row,['Fonte','fonte']),servico:get(row,['Serviço ','Serviço','Servico','servico']),obs:get(row,['Obs','obs','Observações'])});
+      added++;
+    });
+    save('ynq_ind2',ind);
+    document.getElementById('imp-prev').innerHTML=`<div class="al al-s">✓ ${added} linhas importadas!</div>`;
+  }
+  const ap=document.querySelector('.nav-item.active')?.dataset?.page;if(ap)render(ap);
+}
+
+
+function exportBackup(){
+  const data={
+    version:1,
+    exportedAt:new Date().toISOString(),
+    leads:leads,
+    ind:ind
+  };
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='youniq_crm_backup_'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importBackup(e){
+  const file=e.target.files[0];
+  if(!file) return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      const data=JSON.parse(ev.target.result);
+      if(!data.leads||!data.ind) throw new Error('Formato inválido');
+      if(!confirm('Isso vai substituir todos os dados atuais. Continuar?')) return;
+      leads=data.leads;
+      ind=data.ind;
+      save('ynq_leads2',leads);
+      save('ynq_ind2',ind);
+      document.getElementById('backup-msg').innerHTML='<div class="al al-s">✓ Backup restaurado com sucesso! '+leads.length+' contatos e '+ind.length+' linhas de indicadores.</div>';
+      rBackup();
+      rDash();
+    }catch(err){
+      document.getElementById('backup-msg').innerHTML='<div class="al al-w">Erro ao ler o arquivo: '+err.message+'</div>';
+    }
+  };
+  reader.readAsText(file);
+  e.target.value='';
+}
+
+function rBackup(){
+  const fases={};
+  leads.forEach(l=>{ fases[l.fase]=(fases[l.fase]||0)+1; });
+  const ativos=leads.filter(l=>['Atendimento inicial','Reunião agendada','Reunião Realizada','Proposta enviada','Aguardando Retorno','Negociação'].includes(l.fase)).length;
+  document.getElementById('backup-stats').innerHTML=
+    '<div class="mc"><div class="mc-lbl">Total contatos</div><div class="mc-val">'+leads.length+'</div></div>'+
+    '<div class="mc"><div class="mc-lbl">Pipeline ativo</div><div class="mc-val">'+ativos+'</div></div>'+
+    '<div class="mc hl"><div class="mc-lbl">Fechamentos</div><div class="mc-val">'+(fases['Fechado']||0)+'</div></div>'+
+    '<div class="mc"><div class="mc-lbl">Linhas indicadores</div><div class="mc-val">'+ind.length+'</div></div>'+
+    '<div class="mc"><div class="mc-lbl">Último backup</div><div class="mc-val" style="font-size:13px;margin-top:8px">—</div><div class="mc-sub">Exporte para registrar</div></div>';
+}
+document.querySelectorAll('.mo').forEach(el=>{el.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});});
+rDash();updateNavN(getUrg().length);
+
+</script>
+
+<!-- MODAL FASE -->
+<div class="mo" id="mo-fase">
+  <div class="md" style="width:560px">
+    <div class="mh">
+      <div class="mt2" id="mo-fase-title"></div>
+      <button class="btn btn-ghost" onclick="closeModal('fase')">✕</button>
+    </div>
+    <div style="max-height:70vh;overflow-y:auto" id="mo-fase-body"></div>
+    <div class="mf">
+      <button class="btn btn-out" onclick="closeModal('fase')">Fechar</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
