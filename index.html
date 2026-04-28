@@ -50,8 +50,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--dark);min
 .bw{background:var(--wbg);color:var(--warn)}
 .bi{background:var(--ibg);color:var(--info)}
 .bgy{background:#F0EDE8;color:var(--mid)}
-.kw{overflow-x:auto;padding-bottom:10px}
-.kb{display:flex;gap:11px;min-width:max-content;align-items:flex-start}
+.kanban-page-wrap{padding:16px 26px 20px;}
+.kb{display:flex;gap:12px;align-items:flex-start;width:max-content;padding-bottom:16px}
+.kcs{min-height:150px}
 .kc{width:210px;background:var(--white);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;flex-shrink:0}
 .kch{padding:10px 13px;border-bottom:1px solid var(--bordersoft);display:flex;align-items:center;justify-content:space-between}
 .kcn{font-size:12px;font-weight:600;color:var(--dark)}
@@ -141,6 +142,7 @@ tr:hover td{background:var(--gold-pale)}
       <div class="nav-sec">Gestão</div>
       <div class="nav-item" data-page="indicadores"><span class="nav-ic">◎</span>Indicadores 2026</div>
       <div class="nav-item" data-page="importar"><span class="nav-ic">↑</span>Importar planilha</div>
+      <div class="nav-item" data-page="lembretes"><span class="nav-ic">🔔</span>Lembretes <span id="nav-lem" style="margin-left:auto;background:var(--warn);color:#fff;font-size:10px;padding:1px 5px;border-radius:10px;display:none"></span></div>
       <div class="nav-item" data-page="backup"><span class="nav-ic">⊙</span>Backup</div>
     </nav>
     <div class="sb-bot"><div class="u-pill"><div class="u-av">K</div><div class="u-name">Karen — Comercial</div></div></div>
@@ -155,8 +157,8 @@ tr:hover td{background:var(--gold-pale)}
       <div class="content" id="hoje-content"></div>
     </div>
     <div class="page" id="page-kanban">
-      <div class="ph"><div><div class="pt">Pipeline</div><div class="ps">Visão por etapa</div></div><div class="ha"><button class="btn btn-gold" onclick="openModal('lead')">+ Novo contato</button></div></div>
-      <div class="content"><div class="kw"><div class="kb" id="kb"></div></div></div>
+      <div class="ph" style="flex-shrink:0"><div><div class="pt">Pipeline</div><div class="ps">Visão por etapa</div></div><div class="ha"><button class="btn btn-gold" onclick="openModal('lead')">+ Novo contato</button></div></div>
+      <div id="kanban-scroll-wrap" style="overflow-x:auto;overflow-y:auto;padding:16px 26px;-webkit-overflow-scrolling:touch;"><div class="kb" id="kb"></div></div>
     </div>
     <div class="page" id="page-contatos">
       <div class="ph"><div><div class="pt">Todos os contatos</div><div class="ps" id="ct-sub"></div></div><div class="ha"><button class="btn btn-gold" onclick="openModal('lead')">+ Novo contato</button></div></div>
@@ -241,6 +243,7 @@ function render(p){
   else if(p==='contatos')rContatos();
   else if(p==='indicadores')rInd();
   else if(p==='backup')rBackup();
+  else if(p==='lembretes'){rLembretes();filtroLem('pendentes');}
 }
 
 function rDash(){
@@ -295,12 +298,41 @@ function rHoje(){
   document.getElementById('hoje-content').innerHTML=h;
 }
 
+
+let autoScrollTimer=null;
+function stopAutoScroll(){ if(autoScrollTimer){clearInterval(autoScrollTimer);autoScrollTimer=null;} }
+
+// Auto-scroll kanban horizontally when dragging near edges
+document.addEventListener('dragover', function(e){
+  if(!dragId) return;
+  const wrapper = document.getElementById('kanban-scroll-wrap');
+  if(!wrapper) return;
+  const rect = wrapper.getBoundingClientRect();
+  const ZONE = 80;
+  const SPEED = 12;
+  stopAutoScroll();
+  if(e.clientX < rect.left + ZONE){
+    autoScrollTimer = setInterval(()=>{ wrapper.scrollLeft -= SPEED; }, 16);
+  } else if(e.clientX > rect.right - ZONE){
+    autoScrollTimer = setInterval(()=>{ wrapper.scrollLeft += SPEED; }, 16);
+  }
+});
+document.addEventListener('dragend', stopAutoScroll);
+
 let dragId=null;
 
 function rKanban(){
   const hoje=new Date().toISOString().slice(0,10);
   const board=document.getElementById('kb');
   board.innerHTML='';
+  const wrapper=document.querySelector('.kanban-page-wrap');
+
+  // Set kanban scroll wrap height
+  const wrap = document.getElementById('kanban-scroll-wrap');
+  if(wrap){
+    const top = wrap.getBoundingClientRect ? wrap.getBoundingClientRect().top : 140;
+    wrap.style.height = (window.innerHeight - top - 8) + 'px';
+  }
 
   FASES.forEach(fase=>{
     const cards=leads.filter(l=>l.fase===fase);
@@ -328,7 +360,7 @@ function rKanban(){
       kcs.classList.remove('kcs-over');
       if(!dragId) return;
       const lead=leads.find(l=>l.id===dragId);
-      if(lead && lead.fase!==fase){ lead.fase=fase; save('ynq_leads2',leads); }
+      if(lead && lead.fase!==fase){ const faseAnt=lead.fase; lead.fase=fase; save('ynq_leads2',leads); autoInd(lead, faseAnt); }
       rKanban();
       if(document.getElementById('page-contatos').classList.contains('active')) filterCt();
     });
@@ -358,6 +390,7 @@ function rKanban(){
         dragId=null;
         card.classList.remove('kcard-dragging');
         document.querySelectorAll('.kcs-over').forEach(el=>el.classList.remove('kcs-over'));
+        stopAutoScroll();
         setTimeout(()=>{ wasDragged=false; },200);
       });
       card.addEventListener('click',()=>{ if(!wasDragged) openDet(l.id); });
@@ -460,8 +493,18 @@ function salvar(){
   if(!nome||!empresa||!fase){alert('Preencha nome, empresa e fase.');return;}
   const d={nome,empresa,fase,origem:document.getElementById('e-origem').value,contato:document.getElementById('e-contato').value,data:document.getElementById('e-data').value,proxdata:document.getElementById('e-proxdata').value,servico:document.getElementById('e-servico').value,grazi:document.getElementById('e-grazi').value,motivo:document.getElementById('e-motivo').value,obs:document.getElementById('e-obs').value};
   const eid=document.getElementById('e-id').value;
-  if(eid){const i=leads.findIndex(l=>l.id===eid);if(i>-1)leads[i]={...leads[i],...d};}
-  else leads.push({id:uid(),...d});
+  if(eid){
+    const i=leads.findIndex(l=>l.id===eid);
+    if(i>-1){
+      const faseAnterior=leads[i].fase;
+      leads[i]={...leads[i],...d};
+      autoInd(leads[i], faseAnterior);
+    }
+  } else {
+    const novoLead={id:uid(),...d};
+    leads.push(novoLead);
+    autoInd(novoLead, null);
+  }
   save('ynq_leads2',leads);closeModal('lead');closeModal('det');
   const ap=document.querySelector('.nav-item.active')?.dataset?.page;if(ap)render(ap);else rDash();
 }
@@ -550,7 +593,7 @@ function openDet(id){
 function moverFase(id){
   const novaFase=document.getElementById('det-fase-sel').value;
   const l=leads.find(x=>x.id===id);
-  if(l&&novaFase){ l.fase=novaFase; save('ynq_leads2',leads); }
+  if(l&&novaFase){ const faseAnt=l.fase; l.fase=novaFase; save('ynq_leads2',leads); autoInd(l, faseAnt); }
   closeModal('det');
   const ap=document.querySelector('.nav-item.active')?.dataset?.page;
   if(ap) render(ap);
@@ -661,6 +704,176 @@ function doImport(data,tipo){
 }
 
 
+
+// ── LEMBRETES ─────────────────────────────────────────────────────────────────
+let lembretes = JSON.parse(localStorage.getItem('ynq_lem') || '[]');
+let lemFiltro = 'pendentes';
+
+function saveLem(){ localStorage.setItem('ynq_lem', JSON.stringify(lembretes)); }
+
+function openModalLem(id){
+  document.getElementById('ml-lem-title').textContent = id ? 'Editar lembrete' : 'Novo lembrete';
+  document.getElementById('lem-edit-id').value = id || '';
+  
+  // populate leads select
+  const sel = document.getElementById('lem-lead');
+  sel.innerHTML = '<option value="">— Nenhum —</option>' + 
+    leads.map(l => `<option value="${l.id}">${l.nome} — ${l.empresa}</option>`).join('');
+  
+  if(id){
+    const l = lembretes.find(x=>x.id===id);
+    if(l){
+      document.getElementById('lem-titulo').value = l.titulo || '';
+      document.getElementById('lem-data').value = l.data || '';
+      document.getElementById('lem-prior').value = l.prior || 'normal';
+      document.getElementById('lem-lead').value = l.leadId || '';
+      document.getElementById('lem-obs').value = l.obs || '';
+    }
+  } else {
+    document.getElementById('lem-titulo').value = '';
+    document.getElementById('lem-data').value = '';
+    document.getElementById('lem-prior').value = 'normal';
+    document.getElementById('lem-lead').value = '';
+    document.getElementById('lem-obs').value = '';
+  }
+  document.getElementById('mo-lem').classList.add('open');
+}
+
+function salvarLem(){
+  const titulo = document.getElementById('lem-titulo').value.trim();
+  const data = document.getElementById('lem-data').value;
+  if(!titulo || !data){ alert('Preencha título e data.'); return; }
+  const id = document.getElementById('lem-edit-id').value;
+  const d = {
+    titulo, data,
+    prior: document.getElementById('lem-prior').value,
+    leadId: document.getElementById('lem-lead').value,
+    obs: document.getElementById('lem-obs').value,
+    feito: false
+  };
+  if(id){ const i=lembretes.findIndex(x=>x.id===id); if(i>-1) lembretes[i]={...lembretes[i],...d}; }
+  else lembretes.push({id:uid(),...d});
+  saveLem();
+  closeModal('lem');
+  rLembretes();
+  updateNavLem();
+}
+
+function toggleLem(id){
+  const l = lembretes.find(x=>x.id===id);
+  if(l){ l.feito = !l.feito; saveLem(); rLembretes(); updateNavLem(); }
+}
+
+function deleteLem(id){
+  if(!confirm('Remover lembrete?')) return;
+  lembretes = lembretes.filter(x=>x.id!==id);
+  saveLem(); rLembretes(); updateNavLem();
+}
+
+function filtroLem(f){
+  lemFiltro = f;
+  document.querySelectorAll('[id^="lem-filtro"]').forEach(b=>b.classList.remove('btn-gold'));
+  document.querySelectorAll('[id^="lem-filtro"]').forEach(b=>b.classList.add('btn-out'));
+  const btn = document.getElementById('lem-filtro-'+f);
+  if(btn){ btn.classList.remove('btn-out'); btn.classList.add('btn-gold'); }
+  rLembretes();
+}
+
+function rLembretes(){
+  const hoje = new Date().toISOString().slice(0,10);
+  let lista = [...lembretes].sort((a,b)=>a.data>b.data?1:-1);
+  if(lemFiltro==='pendentes') lista = lista.filter(l=>!l.feito);
+  else if(lemFiltro==='feitos') lista = lista.filter(l=>l.feito);
+
+  const PRIOR_COR = { alta:'br', media:'bw', baixa:'bgr', normal:'bgy' };
+  const PRIOR_LABEL = { alta:'🔴 Alta', media:'🟡 Média', baixa:'🟢 Baixa', normal:'Normal' };
+
+  if(!lista.length){
+    document.getElementById('lem-list').innerHTML = `<div style="text-align:center;padding:40px;color:var(--muted)"><div style="font-size:32px;margin-bottom:10px">🔔</div><p>${lemFiltro==='feitos'?'Nenhum lembrete concluído.':'Nenhum lembrete pendente. Crie um!'}</p></div>`;
+    return;
+  }
+
+  document.getElementById('lem-list').innerHTML = lista.map(l=>{
+    const leadNome = l.leadId ? (leads.find(x=>x.id===l.leadId)||{}).nome || '' : '';
+    const vencido = !l.feito && l.data < hoje;
+    const hoje2 = l.data === hoje;
+    return `<div style="background:var(--white);border:1px solid var(--border);border-left:3px solid ${l.feito?'var(--muted)':vencido?'var(--danger)':hoje2?'var(--gold)':'var(--border)'};border-radius:0 var(--r) var(--r) 0;padding:13px 16px;margin-bottom:9px;display:flex;align-items:flex-start;gap:12px;${l.feito?'opacity:.6':''}">
+      <input type="checkbox" ${l.feito?'checked':''} onchange="toggleLem('${l.id}')" style="margin-top:3px;width:16px;height:16px;accent-color:var(--gold);cursor:pointer;flex-shrink:0">
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:500;font-size:14px;color:var(--dark);${l.feito?'text-decoration:line-through;color:var(--muted)':''};margin-bottom:4px">${l.titulo}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:${l.obs?'6px':'0'}">
+          <span style="font-size:12px;color:${vencido?'var(--danger)':hoje2?'var(--warn)':'var(--muted)'};font-weight:${vencido||hoje2?'600':'400'}">
+            ${vencido?'⚠ Vencido — ':''}${hoje2?'📅 Hoje — ':'📅 '}${l.data.split('-').reverse().join('/')}
+          </span>
+          <span class="badge ${PRIOR_COR[l.prior]||'bgy'}" style="font-size:10px">${PRIOR_LABEL[l.prior]||'Normal'}</span>
+          ${leadNome?`<span class="badge bi" style="font-size:10px">👤 ${leadNome}</span>`:''}
+        </div>
+        ${l.obs?`<div style="font-size:12px;color:var(--mid);font-style:italic">${l.obs}</div>`:''}
+      </div>
+      <div style="display:flex;gap:5px;flex-shrink:0">
+        <button class="btn btn-ghost btn-sm" onclick="openModalLem('${l.id}')">✏️</button>
+        <button class="btn btn-ghost btn-sm" onclick="deleteLem('${l.id}')">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateNavLem(){
+  const hoje = new Date().toISOString().slice(0,10);
+  const n = lembretes.filter(l=>!l.feito && l.data <= hoje).length;
+  const el = document.getElementById('nav-lem');
+  el.textContent = n; el.style.display = n>0?'inline-block':'none';
+}
+
+// ── AUTO INDICADORES ──────────────────────────────────────────────────────────
+// When a lead moves to "Reunião Realizada" or "Proposta enviada", auto-log to indicadores
+function autoInd(lead, fasAnterior){
+  const fase = lead.fase;
+  // only log if phase just changed
+  if(fase === fasAnterior) return;
+
+  const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const mes = meses[new Date().getMonth()];
+
+  if(fase === 'Reunião Realizada' && fasAnterior !== 'Reunião Realizada'){
+    // check if already logged this lead as reuniao this month
+    const jaExiste = ind.find(r => r.reuniao && r.reuniao.includes(lead.empresa) && r.mes === mes);
+    if(!jaExiste){
+      ind.push({id:uid(), mes, reuniao: lead.nome+' - '+lead.empresa, proposta:'', fechado:'', fonte:lead.origem||'', servico:lead.servico||'', obs:'Auto-registrado'});
+      save('ynq_ind2', ind);
+      showToast('📊 Reunião registrada nos Indicadores!');
+    }
+  }
+  if(fase === 'Proposta enviada' && fasAnterior !== 'Proposta enviada'){
+    const jaExiste = ind.find(r => r.proposta && r.proposta.includes(lead.empresa) && r.mes === mes);
+    if(!jaExiste){
+      // try to find existing row with this lead's reuniao to fill proposta
+      const row = ind.find(r => r.reuniao && r.reuniao.includes(lead.empresa) && r.mes === mes && !r.proposta);
+      if(row){ row.proposta = lead.empresa; }
+      else { ind.push({id:uid(), mes, reuniao:'', proposta:lead.empresa, fechado:'Aguardando', fonte:lead.origem||'', servico:lead.servico||'', obs:'Auto-registrado'}); }
+      save('ynq_ind2', ind);
+      showToast('📊 Proposta registrada nos Indicadores!');
+    }
+  }
+  if(fase === 'Fechado' && fasAnterior !== 'Fechado'){
+    const row = ind.find(r => r.proposta && r.proposta.includes(lead.empresa) && r.mes === mes);
+    if(row){ row.fechado = 'Fechado'; save('ynq_ind2', ind); showToast('🏆 Fechamento registrado nos Indicadores!'); }
+    else {
+      ind.push({id:uid(), mes, reuniao:'', proposta:lead.empresa, fechado:'Fechado', fonte:lead.origem||'', servico:lead.servico||'', obs:'Auto-registrado'});
+      save('ynq_ind2', ind);
+      showToast('🏆 Fechamento registrado nos Indicadores!');
+    }
+  }
+}
+
+function showToast(msg){
+  const t = document.createElement('div');
+  t.style.cssText='position:fixed;bottom:24px;right:24px;background:var(--dark);color:var(--gold);padding:12px 18px;border-radius:var(--r);font-size:13px;font-weight:500;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.3);border:1px solid rgba(201,168,76,.3)';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 3000);
+}
+
 function exportBackup(){
   const data={
     version:1,
@@ -739,10 +952,46 @@ function rBackup(){
 })();
 
 document.querySelectorAll('.mo').forEach(el=>{el.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});});
-rDash();updateNavN(getUrg().length);
+rDash();updateNavN(getUrg().length);updateNavLem();
+
+// Recalculate kanban height on resize
+window.addEventListener('resize', ()=>{
+  const wrap = document.getElementById('kanban-scroll-wrap');
+  if(wrap && wrap.offsetParent){
+    const top = wrap.getBoundingClientRect().top;
+    wrap.style.height = (window.innerHeight - top - 8) + 'px';
+  }
+});
 
 </script>
 
+
+<!-- MODAL LEMBRETE -->
+<div class="mo" id="mo-lem">
+  <div class="md" style="width:460px">
+    <div class="mh"><div class="mt2" id="ml-lem-title">Novo lembrete</div><button class="btn btn-ghost" onclick="closeModal('lem')">✕</button></div>
+    <div class="mb">
+      <input type="hidden" id="lem-edit-id">
+      <div class="fg"><label class="fl">Título *</label><input class="fi" id="lem-titulo" placeholder="Ex: Ligar para Thorco, Enviar proposta..."></div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Data *</label><input class="fi" id="lem-data" type="date"></div>
+        <div class="fg"><label class="fl">Prioridade</label>
+          <select class="fse" id="lem-prior">
+            <option value="normal">Normal</option>
+            <option value="alta">🔴 Alta</option>
+            <option value="media">🟡 Média</option>
+            <option value="baixa">🟢 Baixa</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg"><label class="fl">Lead relacionado</label>
+        <select class="fse" id="lem-lead"><option value="">— Nenhum —</option></select>
+      </div>
+      <div class="fg"><label class="fl">Observações</label><textarea class="fta" id="lem-obs" placeholder="Detalhes do lembrete..."></textarea></div>
+    </div>
+    <div class="mf"><button class="btn btn-out" onclick="closeModal('lem')">Cancelar</button><button class="btn btn-gold" onclick="salvarLem()">Salvar</button></div>
+  </div>
+</div>
 <!-- MODAL FASE -->
 <div class="mo" id="mo-fase">
   <div class="md" style="width:560px">
